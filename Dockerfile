@@ -1,15 +1,41 @@
-ARG TENSORRT="7"
-ARG CUDA="10"
+FROM nvcr.io/nvidia/tensorrt:20.11-py3
 
-FROM hakuyyf/tensorrtx:trt${TENSORRT}_cuda${CUDA}
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Get opencv 3.4 for bionic based images
-RUN rm /etc/apt/sources.list.d/timsc-ubuntu-opencv-3_3-bionic.list
-RUN rm /etc/apt/sources.list.d/timsc-ubuntu-opencv-3_3-bionic.list.save
-RUN add-apt-repository -y ppa:timsc/opencv-3.4
+RUN apt-get update && apt-get install -y \
+    wget \
+    build-essential \
+    cmake \
+    git \
+    unzip \
+    pkg-config \
+    python-dev \
+    python-opencv \
+    libopencv-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libgtk2.0-dev \
+    python-numpy \
+    python-pycurl \
+    libatlas-base-dev \
+    gfortran \
+    webp \
+    python-opencv \
+    qt5-default \
+    libvtk6-dev \
+    zlib1g-dev
 
-RUN apt-get update
-RUN apt-get install -y libopencv-dev libopencv-dnn-dev libopencv-shape3.4-dbg
-
-# git clone tensorrtx
-RUN git clone https://github.com/wang-xinyu/tensorrtx.git
+# Install Open CV - Warning, this takes absolutely forever
+RUN mkdir -p ~/opencv cd ~/opencv && \
+    wget https://github.com/opencv/opencv/archive/4.1.0.zip && \
+    unzip 4.1.0.zip && \
+    rm 4.1.0.zip && \
+    mv opencv-4.1.0 OpenCV && \
+    cd OpenCV && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install && \
+    ldconfig
