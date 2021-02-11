@@ -204,6 +204,30 @@ ICudaEngine* createEngine(unsigned int maxBatchSize, IBuilder* builder, IBuilder
     config->setInt8Calibrator(calibrator);
 #endif
 
+    const auto profile = builder->createOptimizationProfile();
+
+    for (int i = 0; i < network->getNbInputs(); ++i) {
+        auto input = network->getInput(i);
+        auto dims = input->getDimensions();
+        dims.d[0] = -1;
+        input->setDimensions(dims);
+
+        auto minDims = dims;
+        minDims.d[0] = 1;
+
+        auto optDims = dims;
+        optDims.d[0] = maxBatchSize;
+
+        auto maxDims = dims;
+        maxDims.d[0] = maxBatchSize;
+
+        profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kMIN, minDims);
+        profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kOPT, optDims);
+        profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kMAX, maxDims);
+    }
+
+    config->addOptimizationProfile(profile);
+
     std::cout << "Building engine, please wait for a while..." << std::endl;
     ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
     std::cout << "Build engine successfully!" << std::endl;
